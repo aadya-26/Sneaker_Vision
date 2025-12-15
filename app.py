@@ -881,13 +881,11 @@ if uploaded_file is not None:
 
 # Footer
 st.markdown("""
-<div style="text-align: center; margin-top: 3rem; padding: 2rem; color: #ffffff;">
-    <p style="font-size: 0.9rem; font-weight: 600;">
-        Nike Air Force 1 Low / Nike Air Jordan 1 High / Nike Dunk Low / Adidas Stan Smith / Adidas Superstar / Converse Chuck Taylor High / Vans Old Skool / New Balance 550 / Yeezy Boost 350 V2 / Nike Air Max 90
-    </p>
 
-</div>
+        Nike Air Force 1 Low / Nike Air Jordan 1 High / Nike Dunk Low / Adidas Stan Smith / Adidas Superstar / Converse Chuck Taylor High / Vans Old Skool / New Balance 550 / Yeezy Boost 350 V2 / Nike Air Max 90
+
 
 """)
            
+
 
