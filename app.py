@@ -7,7 +7,7 @@ import base64
 from io import BytesIO
 import torch.nn.functional as F
 import numpy as np
-import cv2
+#import cv2
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
@@ -873,4 +873,5 @@ st.markdown("""
     </p>
 
 </div>
+
 """, unsafe_allow_html=True)
