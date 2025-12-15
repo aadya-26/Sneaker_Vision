@@ -597,7 +597,7 @@ def generate_visualizations(model, image, target_class, device, processor):
 
 # Title
 st.markdown('<div class="title">SNEAKER VISION</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Identify 10 Iconic Sneaker Models with Precision</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Identify 10 Iconic Sneaker Models</div>', unsafe_allow_html=True)
 
 # Center the upload section
 st.markdown('<div style="max-width: 600px; margin: 0 auto;">', unsafe_allow_html=True)
@@ -887,6 +887,7 @@ st.markdown("""
 
 """)
            
+
 
 
 
