@@ -767,5 +767,125 @@ if uploaded_file is not None:
                     if 'gradient_raw' in vis:
                         st.image(vis['gradient_raw'])
                     else:
-                        st.
+                        st.info("Gradient map not available")
+                    #st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Row 2: Overlays
+                st.markdown('<div style="margin-top: 3rem;"></div>', unsafe_allow_html=True)
+                st.markdown("""
+                <div style="text-align: center; margin: 2rem 0 1rem 0;">
+                    <h3 style="font-size: 1.8rem; font-weight: 700; color: #ffffff;">
+                        Heatmap Overlays
+                    </h3>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                col1, col2, col3 = st.columns(3, gap="large")
+                
+                with col1:
+                    st.markdown("""
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <h4 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">
+                            Attention Overlay
+                        </h4>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    #st.markdown('<div class="image-container">', unsafe_allow_html=True)
+                    if 'attention' in vis:
+                        st.image(vis['attention'])
+                        st.markdown("""
+                        <p style="text-align: center; color: #cccccc; font-size: 0.85rem; margin-top: 1rem;">
+                            Transformer attention patterns
+                        </p>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.info("Not available")
+                    #st.markdown('</div>', unsafe_allow_html=True)
+                
+                with col2:
+                    st.markdown("""
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <h4 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">
+                            Gradient Overlay
+                        </h4>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    #st.markdown('<div class="image-container">', unsafe_allow_html=True)
+                    if 'gradient' in vis:
+                        st.image(vis['gradient'])
+                        st.markdown("""
+                        <p style="text-align: center; color: #cccccc; font-size: 0.85rem; margin-top: 1rem;">
+                            Gradient-based saliency
+                        </p>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.info("Not available")
+                    #st.markdown('</div>', unsafe_allow_html=True)
+                
+                with col3:
+                    st.markdown("""
+                    <div style="text-align: center; margin-bottom: 1rem;">
+                        <h4 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">
+                            Combined Analysis
+                        </h4>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    #st.markdown('<div class="image-container">', unsafe_allow_html=True)
+                    if 'combined' in vis:
+                        st.image(vis['combined'])
+                        st.markdown("""
+                        <p style="text-align: center; color: #cccccc; font-size: 0.85rem; margin-top: 1rem;">
+                            Attention + Gradient fusion
+                        </p>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.info("Not available")
+                    #st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Interpretation Guide
+                st.markdown('<div style="margin-top: 3rem;"></div>', unsafe_allow_html=True)
+                st.markdown("""
+                <div style="background: rgba(255, 255, 255, 0.05); 
+                            border-radius: 25px; padding: 2rem; border: 2px solid rgba(255, 255, 255, 0.1);">
+                    <h3 style="text-align: center; font-size: 1.8rem; font-weight: 700; color: #ffffff; margin-bottom: 1.5rem;">
+                        How to Interpret These Visualizations
+                    </h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <h4 style="color: #ffffff; font-size: 1.2rem; margin-bottom: 0.5rem;">Attention Map</h4>
+                            <p style="color: #cccccc; font-size: 0.95rem;">
+                                Shows which image patches the Vision Transformer focuses on. 
+                                Brighter areas = more attention from the model.
+                            </p>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <h4 style="color: #ffffff; font-size: 1.2rem; margin-bottom: 0.5rem;">Gradient Map</h4>
+                            <p style="color: #cccccc; font-size: 0.95rem;">
+                                Highlights pixels that, if changed, would most affect the prediction. 
+                                Red/hot colors = high importance.
+                            </p>
+                        </div>
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
+                            <h4 style="color: #ffffff; font-size: 1.2rem; margin-bottom: 0.5rem;">Combined</h4>
+                            <p style="color: #cccccc; font-size: 0.95rem;">
+                                Merges attention and gradient information for a comprehensive view 
+                                of what features drive the prediction.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.warning("Visualizations could not be generated. This may be due to model configuration.")
 
+
+# Footer
+st.markdown("""
+<div style="text-align: center; margin-top: 3rem; padding: 2rem; color: #ffffff;">
+    <p style="font-size: 0.9rem; font-weight: 600;">
+        Nike Air Force 1 Low / Nike Air Jordan 1 High / Nike Dunk Low / Adidas Stan Smith / Adidas Superstar / Converse Chuck Taylor High / Vans Old Skool / New Balance 550 / Yeezy Boost 350 V2 / Nike Air Max 90
+    </p>
+
+</div>
+
+"""
