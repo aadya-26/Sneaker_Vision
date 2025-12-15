@@ -1,5 +1,5 @@
 import streamlit as st
-from PIL import Image
+from PIL import Image, ImageChops, ImageEnhance
 import torch
 from transformers import ViTForImageClassification, ViTImageProcessor
 import time
@@ -7,7 +7,6 @@ import base64
 from io import BytesIO
 import torch.nn.functional as F
 import numpy as np
-#import cv2
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
@@ -488,6 +487,11 @@ def load_model():
         st.info("Make sure your model is in './sneakers_top10_best' or update the path")
         return None, None, None
 
+# Helper function to blend images using PIL
+def blend_images_pil(background, overlay, alpha=0.5):
+    """Blend two PIL images with given alpha"""
+    return Image.blend(background.convert('RGB'), overlay.convert('RGB'), alpha)
+
 # Generate comprehensive visualizations
 def generate_visualizations(model, image, target_class, device, processor):
     """Generate multiple visualization types"""
@@ -496,7 +500,8 @@ def generate_visualizations(model, image, target_class, device, processor):
     try:
         # Prepare inputs
         inputs = processor(images=image, return_tensors="pt").to(device)
-        img_array = np.array(image.resize((224, 224)))
+        img_resized = image.resize((224, 224))
+        img_array = np.array(img_resized)
         
         # 1. ATTENTION ROLLOUT
         try:
@@ -522,16 +527,19 @@ def generate_visualizations(model, image, target_class, device, processor):
                     num_patches = int(np.sqrt(len(mask)))
                     attention_map = mask.reshape(num_patches, num_patches)
                     
-                    # Create attention overlay
-                    attention_resized = cv2.resize(attention_map, (224, 224))
-                    attention_resized = (attention_resized - attention_resized.min()) / (attention_resized.max() - attention_resized.min() + 1e-12)
+                    # Create attention overlay using PIL
+                    attention_resized_array = np.array(Image.fromarray(attention_map).resize((224, 224), Image.BILINEAR))
+                    attention_resized = (attention_resized_array - attention_resized_array.min()) / (attention_resized_array.max() - attention_resized_array.min() + 1e-12)
                     
                     # Apply colormap
                     heatmap = cm.hot(attention_resized)[:, :, :3] * 255
                     heatmap = heatmap.astype(np.uint8)
-                    attention_overlay = cv2.addWeighted(img_array, 0.5, heatmap, 0.5, 0)
+                    heatmap_img = Image.fromarray(heatmap)
                     
-                    visualizations['attention'] = Image.fromarray(attention_overlay)
+                    # Blend images
+                    attention_overlay = blend_images_pil(img_resized, heatmap_img, alpha=0.5)
+                    
+                    visualizations['attention'] = attention_overlay
                     visualizations['attention_raw'] = Image.fromarray((cm.hot(attention_resized)[:, :, :3] * 255).astype(np.uint8))
         except Exception as e:
             print(f"Attention rollout failed: {e}")
@@ -550,25 +558,31 @@ def generate_visualizations(model, image, target_class, device, processor):
             saliency = np.abs(gradients).max(axis=0)
             saliency = (saliency - saliency.min()) / (saliency.max() - saliency.min() + 1e-12)
             
-            # Create gradient overlay
+            # Create gradient overlay using PIL
             heatmap = cm.hot(saliency)[:, :, :3] * 255
             heatmap = heatmap.astype(np.uint8)
-            gradient_overlay = cv2.addWeighted(img_array, 0.5, heatmap, 0.5, 0)
+            heatmap_img = Image.fromarray(heatmap)
             
-            visualizations['gradient'] = Image.fromarray(gradient_overlay)
+            # Blend images
+            gradient_overlay = blend_images_pil(img_resized, heatmap_img, alpha=0.5)
+            
+            visualizations['gradient'] = gradient_overlay
             visualizations['gradient_raw'] = Image.fromarray((cm.hot(saliency)[:, :, :3] * 255).astype(np.uint8))
             
             # 3. COMBINED
             if 'attention' in visualizations:
-                attention_resized = cv2.resize(attention_map, (224, 224))
-                attention_resized = (attention_resized - attention_resized.min()) / (attention_resized.max() - attention_resized.min() + 1e-12)
+                attention_resized_array = np.array(Image.fromarray(attention_map).resize((224, 224), Image.BILINEAR))
+                attention_resized = (attention_resized_array - attention_resized_array.min()) / (attention_resized_array.max() - attention_resized_array.min() + 1e-12)
                 combined = (attention_resized + saliency) / 2
                 
                 heatmap = cm.hot(combined)[:, :, :3] * 255
                 heatmap = heatmap.astype(np.uint8)
-                combined_overlay = cv2.addWeighted(img_array, 0.4, heatmap, 0.6, 0)
+                heatmap_img = Image.fromarray(heatmap)
                 
-                visualizations['combined'] = Image.fromarray(combined_overlay)
+                # Blend images with different alpha
+                combined_overlay = blend_images_pil(img_resized, heatmap_img, alpha=0.6)
+                
+                visualizations['combined'] = combined_overlay
                 visualizations['combined_raw'] = Image.fromarray((cm.hot(combined)[:, :, :3] * 255).astype(np.uint8))
             
         except Exception as e:
@@ -753,125 +767,4 @@ if uploaded_file is not None:
                     if 'gradient_raw' in vis:
                         st.image(vis['gradient_raw'])
                     else:
-                        st.info("Gradient map not available")
-                    #st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Row 2: Overlays
-                st.markdown('<div style="margin-top: 3rem;"></div>', unsafe_allow_html=True)
-                st.markdown("""
-                <div style="text-align: center; margin: 2rem 0 1rem 0;">
-                    <h3 style="font-size: 1.8rem; font-weight: 700; color: #ffffff;">
-                        Heatmap Overlays
-                    </h3>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                col1, col2, col3 = st.columns(3, gap="large")
-                
-                with col1:
-                    st.markdown("""
-                    <div style="text-align: center; margin-bottom: 1rem;">
-                        <h4 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">
-                            Attention Overlay
-                        </h4>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    #st.markdown('<div class="image-container">', unsafe_allow_html=True)
-                    if 'attention' in vis:
-                        st.image(vis['attention'])
-                        st.markdown("""
-                        <p style="text-align: center; color: #cccccc; font-size: 0.85rem; margin-top: 1rem;">
-                            Transformer attention patterns
-                        </p>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.info("Not available")
-                    #st.markdown('</div>', unsafe_allow_html=True)
-                
-                with col2:
-                    st.markdown("""
-                    <div style="text-align: center; margin-bottom: 1rem;">
-                        <h4 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">
-                            Gradient Overlay
-                        </h4>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    #st.markdown('<div class="image-container">', unsafe_allow_html=True)
-                    if 'gradient' in vis:
-                        st.image(vis['gradient'])
-                        st.markdown("""
-                        <p style="text-align: center; color: #cccccc; font-size: 0.85rem; margin-top: 1rem;">
-                            Gradient-based saliency
-                        </p>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.info("Not available")
-                    #st.markdown('</div>', unsafe_allow_html=True)
-                
-                with col3:
-                    st.markdown("""
-                    <div style="text-align: center; margin-bottom: 1rem;">
-                        <h4 style="font-size: 1.3rem; font-weight: 700; color: #ffffff;">
-                            Combined Analysis
-                        </h4>
-                    </div>
-                    """, unsafe_allow_html=True)
-                    #st.markdown('<div class="image-container">', unsafe_allow_html=True)
-                    if 'combined' in vis:
-                        st.image(vis['combined'])
-                        st.markdown("""
-                        <p style="text-align: center; color: #cccccc; font-size: 0.85rem; margin-top: 1rem;">
-                            Attention + Gradient fusion
-                        </p>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.info("Not available")
-                    #st.markdown('</div>', unsafe_allow_html=True)
-                
-                # Interpretation Guide
-                st.markdown('<div style="margin-top: 3rem;"></div>', unsafe_allow_html=True)
-                st.markdown("""
-                <div style="background: rgba(255, 255, 255, 0.05); 
-                            border-radius: 25px; padding: 2rem; border: 2px solid rgba(255, 255, 255, 0.1);">
-                    <h3 style="text-align: center; font-size: 1.8rem; font-weight: 700; color: #ffffff; margin-bottom: 1.5rem;">
-                        How to Interpret These Visualizations
-                    </h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                            <h4 style="color: #ffffff; font-size: 1.2rem; margin-bottom: 0.5rem;">Attention Map</h4>
-                            <p style="color: #cccccc; font-size: 0.95rem;">
-                                Shows which image patches the Vision Transformer focuses on. 
-                                Brighter areas = more attention from the model.
-                            </p>
-                        </div>
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                            <h4 style="color: #ffffff; font-size: 1.2rem; margin-bottom: 0.5rem;">Gradient Map</h4>
-                            <p style="color: #cccccc; font-size: 0.95rem;">
-                                Highlights pixels that, if changed, would most affect the prediction. 
-                                Red/hot colors = high importance.
-                            </p>
-                        </div>
-                        <div style="background: rgba(255, 255, 255, 0.05); padding: 1.5rem; border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                            <h4 style="color: #ffffff; font-size: 1.2rem; margin-bottom: 0.5rem;">Combined</h4>
-                            <p style="color: #cccccc; font-size: 0.95rem;">
-                                Merges attention and gradient information for a comprehensive view 
-                                of what features drive the prediction.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.warning("Visualizations could not be generated. This may be due to model configuration.")
-
-
-# Footer
-st.markdown("""
-<div style="text-align: center; margin-top: 3rem; padding: 2rem; color: #ffffff;">
-    <p style="font-size: 0.9rem; font-weight: 600;">
-        Nike Air Force 1 Low / Nike Air Jordan 1 High / Nike Dunk Low / Adidas Stan Smith / Adidas Superstar / Converse Chuck Taylor High / Vans Old Skool / New Balance 550 / Yeezy Boost 350 V2 / Nike Air Max 90
-    </p>
-
-</div>
-
-""", unsafe_allow_html=True)
+                        st.
